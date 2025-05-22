@@ -20,8 +20,8 @@ class Parent:
     def __init__(self, name, age):
         if not isinstance(name, str) or len(name.strip()) == 0:
             raise ValueError("Имя родителя должно быть непустой строкой")
-        if not isinstance(age, int) or age < 18:
-            raise ValueError("Возраст родителя должен быть целым числом не меньше 18")
+        if not isinstance(age, int) or age < 16:
+            raise ValueError("Возраст родителя должен быть целым числом не меньше 16")
 
         self.name = name.strip()
         self.age = age
@@ -55,21 +55,14 @@ class Parent:
         print(f"Родитель {self.name} накормил ребенка {self.children[child_index].name}")
 
 
-def input_with_validation(prompt, validation_func, error_message=None):
-    while True:
-        try:
-            value = input(prompt)
-            validated_value = validation_func(value)
-            return validated_value
-        except ValueError as e:
-            print(f"Ошибка: {error_message or str(e)}")
-            print("Пожалуйста, попробуйте еще раз.\n")
-
-
 def validate_name(name):
     name = name.strip()
     if not name:
         raise ValueError("Имя не может быть пустым")
+    if not all(c.isalpha() or c.isspace() or c in "-'" for c in name):
+        raise ValueError("Имя должно содержать только буквы, пробелы, дефисы и апострофы")
+    if len(name) < 2:
+        raise ValueError("Имя должно содержать минимум 2 символа")
     return name
 
 
@@ -79,8 +72,8 @@ def validate_parent_age(age_str):
     except ValueError:
         raise ValueError("Возраст должен быть целым числом")
 
-    if age < 18:
-        raise ValueError("Минимальный возраст родителя - 18 лет")
+    if age < 16:
+        raise ValueError("Минимальный возраст родителя - 16 лет")
     return age
 
 
@@ -108,13 +101,24 @@ def validate_positive_int(value_str, max_value=None):
     return value
 
 
+def input_with_validation(prompt, validation_func, error_message=None):
+    while True:
+        try:
+            value = input(prompt)
+            validated_value = validation_func(value)
+            return validated_value
+        except ValueError as e:
+            print(f"Ошибка: {error_message or str(e)}")
+            print("Пожалуйста, попробуйте еще раз.\n")
+
+
 def create_child(parent_age):
     while True:
         try:
             name = input_with_validation(
                 "Введите имя ребенка: ",
                 validate_name,
-                "Имя ребенка должно быть непустой строкой"
+                "Имя должно содержать только буквы, пробелы, дефисы и апострофы (минимум 2 символа)"
             )
             age = input_with_validation(
                 "Введите возраст ребенка: ",
@@ -124,7 +128,6 @@ def create_child(parent_age):
 
             child = Child(name, age)
 
-            # Проверка возраста родителя и ребенка
             if parent_age - age < 16:
                 print(f"Ошибка: Разница в возрасте между родителем и ребенком должна быть не менее 16 лет.")
                 print(f"Родителю {parent_age} лет, ребенку {age} лет - разница {parent_age - age} лет.")
@@ -200,20 +203,20 @@ def main():
         parent_name = input_with_validation(
             "Введите имя родителя: ",
             validate_name,
-            "Имя родителя должно быть непустой строкой"
+            "Имя должно содержать только буквы, пробелы, дефисы и апострофы (минимум 2 символа)"
         )
         parent_age = input_with_validation(
             "Введите возраст родителя: ",
             validate_parent_age,
-            "Возраст родителя должен быть целым числом не меньше 18"
+            "Возраст родителя должен быть целым числом не меньше 16"
         )
 
         parent = Parent(parent_name, parent_age)
 
         num_children = input_with_validation(
             f"Введите количество детей у родителя {parent_name}: ",
-            lambda x: validate_positive_int(x, 10),
-            "Количество детей должно быть положительным числом (максимум 10)"
+            lambda x: validate_positive_int(x),
+            "Количество детей должно быть положительным числом"
         )
 
         for j in range(num_children):
@@ -275,7 +278,7 @@ def main():
                         print(f"Ошибка: {str(e)}")
 
         elif choice == 5:
-            print("\nПрограмма завершена.")
+            print("\nПрограмма завершена. До свидания!")
             break
 
         input("\nНажмите Enter для продолжения...")
