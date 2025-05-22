@@ -1,106 +1,285 @@
 class Child:
     def __init__(self, name, age):
-        self.name = name
+        if not isinstance(name, str) or len(name.strip()) == 0:
+            raise ValueError("Имя ребенка должно быть непустой строкой")
+        if not isinstance(age, int) or age < 0 or age > 18:
+            raise ValueError("Возраст ребенка должен быть целым числом от 0 до 18")
+
+        self.name = name.strip()
         self.age = age
         self.is_calm = False
         self.is_hungry = True
 
     def __str__(self):
-        s = ""
-        s += ("Ребенок: " + self.name + ", возраст: " + str(self.age) +
-              ", состояние спокойствия: " + ("Спокоен" if self.is_calm else "Не спокоен") +
-              ", состояние голода: " + ("Голодный" if self.is_hungry else "Сытый"))
-        return s
+        return (f"Ребенок: {self.name}, возраст: {self.age}, "
+                f"состояние спокойствия: {'Спокоен' if self.is_calm else 'Не спокоен'}, "
+                f"состояние голода: {'Голодный' if self.is_hungry else 'Сытый'}")
+
 
 class Parent:
     def __init__(self, name, age):
-        self.name = name
+        if not isinstance(name, str) or len(name.strip()) == 0:
+            raise ValueError("Имя родителя должно быть непустой строкой")
+        if not isinstance(age, int) or age < 18:
+            raise ValueError("Возраст родителя должен быть целым числом не меньше 18")
+
+        self.name = name.strip()
         self.age = age
         self.children = []
 
     def add_child(self, child):
+        if not isinstance(child, Child):
+            raise ValueError("Можно добавить только объект класса Child")
+
+        if self.age - child.age < 16:
+            raise ValueError("Разница в возрасте между родителем и ребенком должна быть не менее 16 лет")
+
         self.children.append(child)
 
     def __str__(self):
-        s = ""
-        s += ("Родитель: " + self.name + ", возраст: " + str(self.age) +
-              ", количество детей: " + str(len(self.children)))
-        return s
+        return (f"Родитель: {self.name}, возраст: {self.age}, "
+                f"количество детей: {len(self.children)}")
 
     def calm_child(self, child_index):
-        if 0 <= child_index < len(self.children):
-            self.children[child_index].is_calm = True
-            print(f"Родитель {self.name} успокоил ребенка {self.children[child_index].name}")
-        else:
-            print("Ребёнка с таким индексом не существует.")
+        if not isinstance(child_index, int) or not (0 <= child_index < len(self.children)):
+            raise IndexError("Ребёнка с таким индексом не существует.")
+
+        self.children[child_index].is_calm = True
+        print(f"Родитель {self.name} успокоил ребенка {self.children[child_index].name}")
 
     def feed_child(self, child_index):
-        if 0 <= child_index < len(self.children):
-            self.children[child_index].is_hungry = False
-            print(f"Родитель {self.name} накормил ребенка {self.children[child_index].name}")
-        else:
-            print("Ребёнка с таким индексом не существует.")
+        if not isinstance(child_index, int) or not (0 <= child_index < len(self.children)):
+            raise IndexError("Ребёнка с таким индексом не существует.")
+
+        self.children[child_index].is_hungry = False
+        print(f"Родитель {self.name} накормил ребенка {self.children[child_index].name}")
+
+
+def input_with_validation(prompt, validation_func, error_message=None):
+    while True:
+        try:
+            value = input(prompt)
+            validated_value = validation_func(value)
+            return validated_value
+        except ValueError as e:
+            print(f"Ошибка: {error_message or str(e)}")
+            print("Пожалуйста, попробуйте еще раз.\n")
+
+
+def validate_name(name):
+    name = name.strip()
+    if not name:
+        raise ValueError("Имя не может быть пустым")
+    return name
+
+
+def validate_parent_age(age_str):
+    try:
+        age = int(age_str)
+    except ValueError:
+        raise ValueError("Возраст должен быть целым числом")
+
+    if age < 18:
+        raise ValueError("Минимальный возраст родителя - 18 лет")
+    return age
+
+
+def validate_child_age(age_str):
+    try:
+        age = int(age_str)
+    except ValueError:
+        raise ValueError("Возраст должен быть целым числом")
+
+    if age < 0 or age > 18:
+        raise ValueError("Возраст ребенка должен быть от 0 до 18 лет")
+    return age
+
+
+def validate_positive_int(value_str, max_value=None):
+    try:
+        value = int(value_str)
+    except ValueError:
+        raise ValueError("Должно быть целым числом")
+
+    if value <= 0:
+        raise ValueError("Должно быть положительным числом")
+    if max_value is not None and value > max_value:
+        raise ValueError(f"Должно быть не больше {max_value}")
+    return value
+
+
+def create_child(parent_age):
+    while True:
+        try:
+            name = input_with_validation(
+                "Введите имя ребенка: ",
+                validate_name,
+                "Имя ребенка должно быть непустой строкой"
+            )
+            age = input_with_validation(
+                "Введите возраст ребенка: ",
+                validate_child_age,
+                "Возраст ребенка должен быть от 0 до 18 лет"
+            )
+
+            child = Child(name, age)
+
+            # Проверка возраста родителя и ребенка
+            if parent_age - age < 16:
+                print(f"Ошибка: Разница в возрасте между родителем и ребенком должна быть не менее 16 лет.")
+                print(f"Родителю {parent_age} лет, ребенку {age} лет - разница {parent_age - age} лет.")
+                print("Пожалуйста, введите данные ребенка снова.")
+                continue
+
+            return child
+        except ValueError as e:
+            print(f"Ошибка при создании ребенка: {str(e)}")
+            print("Пожалуйста, попробуйте еще раз.\n")
+
+
+def select_parent(parents):
+    if not parents:
+        print("Нет доступных родителей.")
+        return None
+
+    while True:
+        try:
+            print("\nСписок родителей:")
+            for i, parent in enumerate(parents, 1):
+                print(f"{i}. {parent.name} ({parent.age} лет), детей: {len(parent.children)}")
+
+            choice = input_with_validation(
+                "Выберите номер родителя (или 0 для отмены): ",
+                lambda x: validate_positive_int(x, len(parents)),
+                f"Введите число от 1 до {len(parents)}"
+            )
+
+            if choice == 0:
+                return None
+            return parents[choice - 1]
+        except Exception as e:
+            print(f"Ошибка: {str(e)}")
+
+
+def select_child(parent):
+    if not parent.children:
+        print(f"У родителя {parent.name} нет детей.")
+        return None
+
+    while True:
+        try:
+            print(f"\nДети родителя {parent.name}:")
+            for i, child in enumerate(parent.children, 1):
+                print(f"{i}. {child}")
+
+            choice = input_with_validation(
+                "Выберите номер ребенка (или 0 для отмены): ",
+                lambda x: validate_positive_int(x, len(parent.children)),
+                f"Введите число от 1 до {len(parent.children)}"
+            )
+
+            if choice == 0:
+                return None
+            return choice - 1
+        except Exception as e:
+            print(f"Ошибка: {str(e)}")
+
 
 def main():
     parents = []
-    num_parents = int(input("Введите количество родителей: "))
+
+    print("=== Создание родителей ===")
+    num_parents = input_with_validation(
+        "Введите количество родителей: ",
+        lambda x: validate_positive_int(x, 10),
+        "Количество родителей должно быть положительным числом (максимум 10)"
+    )
 
     for i in range(num_parents):
-        parent_name = input(f"Введите имя родителя {i+1}: ")
-        parent_age = int(input(f"Введите возраст родителя {i+1}: "))
+        print(f"\n=== Родитель {i + 1}/{num_parents} ===")
+        parent_name = input_with_validation(
+            "Введите имя родителя: ",
+            validate_name,
+            "Имя родителя должно быть непустой строкой"
+        )
+        parent_age = input_with_validation(
+            "Введите возраст родителя: ",
+            validate_parent_age,
+            "Возраст родителя должен быть целым числом не меньше 18"
+        )
+
         parent = Parent(parent_name, parent_age)
 
-        num_children = int(input(f"Введите количество детей у родителя {parent_name}: "))
+        num_children = input_with_validation(
+            f"Введите количество детей у родителя {parent_name}: ",
+            lambda x: validate_positive_int(x, 10),
+            "Количество детей должно быть положительным числом (максимум 10)"
+        )
+
         for j in range(num_children):
-            child_name = input(f"Введите имя ребенка {j+1}: ")
-            child_age = int(input(f"Введите возраст ребенка {j+1}: "))
-            child = Child(child_name, child_age)
+            print(f"\n--- Ребенок {j + 1}/{num_children} родителя {parent_name} ---")
+            child = create_child(parent_age)
             parent.add_child(child)
 
         parents.append(parent)
+        print(f"\nРодитель {parent_name} успешно добавлен!")
 
     while True:
-        print("\nМеню:")
-        print("1) Информация о родителе")
-        print("2) Информация о всех детях данного родителя")
-        print("3) Выполнить действие с ребенком")
-        print("4) Выход")
+        print("\n=== Главное меню ===")
+        print("1. Просмотреть информацию о родителе")
+        print("2. Просмотреть информацию о детях родителя")
+        print("3. Успокоить ребенка")
+        print("4. Покормить ребенка")
+        print("5. Выход")
 
-        choice = int(input("Выберите действие: "))
+        choice = input_with_validation(
+            "Выберите действие (1-5): ",
+            lambda x: validate_positive_int(x, 5),
+            "Введите число от 1 до 5"
+        )
 
         if choice == 1:
-            k = int(input("Введите номер родителя: ".format(len(parents)))) - 1
-            if 0 <= k < len(parents):
-                print(parents[k].__str__())
-            else:
-                print("Некорректный номер родителя.")
+            parent = select_parent(parents)
+            if parent:
+                print("\nИнформация о родителе:")
+                print(parent)
 
         elif choice == 2:
-            k = int(input("Введите номер родителя: ".format(len(parents)))) - 1
-            if 0 <= k < len(parents):
-                for i, child in enumerate(parents[k].children):
-                    print(f"{i+1}. {child.__str__()}")
-            else:
-                print("Некорректный номер родителя.")
+            parent = select_parent(parents)
+            if parent:
+                if not parent.children:
+                    print(f"\nУ родителя {parent.name} нет детей.")
+                else:
+                    print(f"\nДети родителя {parent.name}:")
+                    for i, child in enumerate(parent.children, 1):
+                        print(f"{i}. {child}")
 
         elif choice == 3:
-            k_parent = int(input("Введите номер родителя: ".format(len(parents)))) - 1
-            k_child = int(input("Введите номер ребёнка: ".format(len(parents[k_parent].children)))) - 1
-
-            action = input("Выберите действие (1 - успокоить, 2 - покормить): ")
-            if action == "1":
-                parents[k_parent].calm_child(k_child)
-            elif action == "2":
-                parents[k_parent].feed_child(k_child)
-            else:
-                print("Некорректный выбор действия.")
+            parent = select_parent(parents)
+            if parent:
+                child_index = select_child(parent)
+                if child_index is not None:
+                    try:
+                        parent.calm_child(child_index)
+                    except Exception as e:
+                        print(f"Ошибка: {str(e)}")
 
         elif choice == 4:
-            print("Вы вышли из программы")
+            parent = select_parent(parents)
+            if parent:
+                child_index = select_child(parent)
+                if child_index is not None:
+                    try:
+                        parent.feed_child(child_index)
+                    except Exception as e:
+                        print(f"Ошибка: {str(e)}")
+
+        elif choice == 5:
+            print("\nПрограмма завершена.")
             break
 
-        else:
-            print("Некорректный выбор. Пожалуйста, выберите снова.")
+        input("\nНажмите Enter для продолжения...")
+
 
 if __name__ == "__main__":
     main()
